@@ -12,7 +12,7 @@ db.once('open', function() {
 
     /*
 
-    Identifiant
+    -- Identifiant
     -- Nom
     -- Localisation
     -- Sensation
@@ -22,13 +22,13 @@ db.once('open', function() {
     -- Land
 
     */
-  
+
     let ridesSchema = mongoose.Schema({
         _id: String,
         name: String
     })
     let rideModel = mongoose.model('Ride', ridesSchema)
-    
+
     dlpPark.GetWaitTimes().then(function(rides) {
 
         for (ride of dlpPark.Rides) {
@@ -37,7 +37,7 @@ db.once('open', function() {
             rideObj.save(function (err, rideSaved) {
                 if (err) return console.error(err);
             });
-        
+
         }
     }, console.error);
 });
