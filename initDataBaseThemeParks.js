@@ -1,43 +1,34 @@
 // include the Themeparks library
-const Themeparks = require("themeparks");
+const Companion = require('./Companion');
 
-const dlpPark = new Themeparks.Parks.DisneylandParisMagicKingdom();
+Companion.connect(function() {
 
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/dlp_test');
+    let dlpRides = Companion.dlpPark.GetWaitTimes();
+    let wdsRides = Companion.wdsPark.GetWaitTimes();
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
-
-    /*
-
-    -- Identifiant
-    -- Nom
-    -- Localisation
-    -- Sensation
-    -- Durée attraction
-    -- Taille autorisée
-    -- FastPass ?
-    -- Land
-
-    */
-
-    let ridesSchema = mongoose.Schema({
-        _id: String,
-        name: String
-    })
-    let rideModel = mongoose.model('Ride', ridesSchema)
-
-    dlpPark.GetWaitTimes().then(function(rides) {
-
-        for (ride of dlpPark.Rides) {
-            ride = ride.toJSON()
-            let rideObj = new rideModel({_id: ride.id})
-            rideObj.save(function (err, rideSaved) {
-                if (err) return console.error(err);
-            });
-
+    Promise.all([dlpRides, wdsRides]).then(function(rides) {
+        rides = [].concat.apply([], rides);
+        let counter = 0;
+        for (ride of rides) {
+            Companion.Ride.create({
+                _id: ride.id.split('_')[1],
+                name: ride.name,
+                infos: {
+                    park: ride.id.split('_')[1].substr(0, 2),
+                    fastPass: ride.fastPass,
+                    //duration: ridesData[ride.id.split('_')[1]].duration,
+                    geoloc: {
+                        lat: 0,
+                        long: 0
+                    }, //merge direct le ridesData avec rideObj.info ?
+                },
+            }, function (err, small) {
+                if (err) return handleError(err);
+                if (++counter == rides.length) {
+                    Companion.endConnection()
+                }
+                // saved!
+            })
         }
-    }, console.error);
-});
+    })
+})
