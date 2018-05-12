@@ -22,7 +22,7 @@ Companion.connect(function() {
                         long: 0
                     }, //merge direct le ridesData avec rideObj.info ?
                 },
-            }, function (err, small) {
+            }, function (err, ride) {
                 if (err) return handleError(err);
                 if (++counter == rides.length) {
                     Companion.endConnection()
