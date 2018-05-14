@@ -29,7 +29,7 @@ Companion.connect(function() {
     });
 
     // Return all rides
-    app.get('/get/rides', function (req, res) {
+    app.get('/rides', function (req, res) {
         Companion.Ride.find({}, function(err, ride){
             if (err) res.send(err);
             res.json(ride);
@@ -37,11 +37,26 @@ Companion.connect(function() {
     });
 
     // Return ride by id
-    app.get('/get/ride/:id', function (req, res) {
+    app.get('/ride/:id', function (req, res) {
         Companion.Ride.findById(req.params.id, function(err,ride){
             if (err) res.send(err);
             res.json(ride);
         });
+    });
+
+    // Return wait time by id of the ride
+    app.get('/wait/:id', function (req, res) {
+        Companion.Ride.findById(req.params.id, function(err,ride){
+            if (err) res.send(err);
+            res.json(ride.realTime.waitTime);
+        });
+    });
+
+    // Return
+    app.get('/rides/:lat/:long/:duration', function (req, res) {
+        // req.params.lat
+        // req.params.long
+        // req.params.duration
     });
 
 })
