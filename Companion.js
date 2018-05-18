@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const Themeparks = require("themeparks");
+const data = require("./data")
 
 let companion =  {
+
+    apiKey: "AIzaSyC3wkOpW2Gbl5wA010K16IDeVMEDb7m5TE",
+
     // Get the parks
     dlpPark: new Themeparks.Parks.DisneylandParisMagicKingdom(),
     wdsPark: new Themeparks.Parks.DisneylandParisWaltDisneyStudios(),
@@ -9,7 +13,11 @@ let companion =  {
     //
     connection: mongoose.connection,
 
-    ridesData: {},
+    ridesData: data,
+
+    config: {
+        timeMargin: 5
+    },
 
     // Model Ride
     Ride: require('./api/models/Ride'),
@@ -25,8 +33,8 @@ let companion =  {
 
     getRides: function(callback) {
         // Get wait times from the parks
-        let dlpRides = Companion.dlpPark.GetWaitTimes();
-        let wdsRides = Companion.wdsPark.GetWaitTimes();
+        let dlpRides = this.dlpPark.GetWaitTimes();
+        let wdsRides = this.wdsPark.GetWaitTimes();
 
         // One promise for each park
         // @param array[array of rides,array of rides]

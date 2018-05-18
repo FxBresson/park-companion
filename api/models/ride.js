@@ -7,6 +7,11 @@ var Schema = mongoose.Schema;
 var RideSchema = new Schema({
     _id: String,
     name: String,
+    walkTimeMatrix : Schema.Types.Mixed,
+    loc: {
+        type: {type: String, default: 'Point'},
+        coordinates: [Number]
+    },
     infos: {
         park: String,
         fastPass: Boolean,

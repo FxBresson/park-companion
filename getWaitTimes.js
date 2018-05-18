@@ -24,7 +24,6 @@ Companion.connect(function() {
             Companion.Ride.findById(ride.id.split('_')[1], function (err, rideObj) {
                 if (err) return handleError(err);
 
-
                 rideObj.realTime.waitTime = ride.waitTime;
                 rideObj.realTime.lastUpdate = ride.lastUpdate;
                 rideObj.realTime.active = ride.active;
