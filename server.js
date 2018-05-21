@@ -62,6 +62,8 @@ Companion.connect(function() {
         // Cette partie la je vais m'en occuper je sais comment faire, pour l'instant toi pour tester, fais une requete sur un n'importe quel ID genre :
         // Companion.Ride.findById("P1AA00", function(err,ride){})
 
+        // db.rides.find({ loc: { $near: { $geometry: { type: "Point",  coordinates: [ 48.873580, 2.774306 ] } } } }).limit(1)
+
         // Step 2 : obtenir toutes les attractions ou : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
         // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
 
