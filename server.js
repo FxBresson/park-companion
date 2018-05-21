@@ -60,6 +60,10 @@ Companion.connect(function() {
             return ride;
         });
 
+        // db.rides.find({ loc: { $near: { $geometry: { type: "Point",  coordinates: [ 48.873580, 2.774306 ] } } } }).limit(1)
+
+        // Step 2 : obtenir toutes les attractions ou : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
+        // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
 
         // Results
         var nearestRides = [];

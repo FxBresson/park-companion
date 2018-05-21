@@ -10,7 +10,7 @@ var RideSchema = new Schema({
     walkTimeMatrix : Schema.Types.Mixed,
     loc: {
         type: {type: String, default: 'Point'},
-        coordinates: [Number]
+        coordinates: { type: [Number],   default: [0,0] }
     },
     infos: {
         park: String,
@@ -34,6 +34,8 @@ var RideSchema = new Schema({
     },
     waitTimesRecorded: Schema.Types.Mixed
 });
+
+RideSchema.index({loc: '2dsphere'});
 
 // Compile model from schema
 module.exports = mongoose.model('Ride', RideSchema);

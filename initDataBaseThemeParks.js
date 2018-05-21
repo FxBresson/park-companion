@@ -4,52 +4,65 @@ const async = require('async');
 
 // Connection to the database
 Companion.connect(function() {
+    console.log('Connected to DB')
 
     Companion.getRides(function(rides) {
-
+        console.log('Rides recovered from source')
+        
         rides.sort(function(a, b) {
             var id_a = a.id.split('_')[1].toLowerCase(), id_b = b.id.split('_')[1].toLowerCase();
             return id_a > id_b ? 1 : id_a < id_b ? -1 : 0;
         });
-
         let rideIdCollection = Array.from(rides, x => x.id.split('_')[1]);
-        let distances = {}
-
-        for (let from_index in rideIdCollection) {
-            from = rideIdCollection[from_index];
-            distances[from] = {};
-            for (let to_index = (parseInt(from_index)+1); to_index < rideIdCollection.length; to_index ++) {
-                let to = rideIdCollection[to_index]
-                distances[from][to] = 10;
-                // distances[from][to] = getDistance(from, to);
-            }
-        }
-
-        // db.places.find( { loc : { $near : [50,50] } } ).limit(20)
-
-        console.log(distances)
 
         async.each(rides, function (ride, callback) {
             let ride_id = ride.id.split('_')[1]
-            // Data for the database
-            Companion.Ride.create({
-                // ID of the ride
-                _id: ride_id,
-                // Name of the ride
-                name: ride.name,
-                // Information of the ride
-                infos: {
-                    park: ride.id.split('_')[1].substr(0, 2),
-                    fastPass: ride.fastPass,
-                    duration: Companion.ridesData[ride_id].duration,
-                },
-                walkTimeMatrix : distances[ride_id],
-                loc: {
-                    coordinates: Companion.ridesData[ride_id].coordinates,
+
+            let destinations = [];
+            let walkTimeMatrixModel = rideIdCollection.slice(rideIdCollection.indexOf(ride_id)+1, rideIdCollection.length);
+            let walkTimeMatrix = {};
+
+            for (id of walkTimeMatrixModel) {
+                walkTimeMatrix[id] = null
+                destinations.push({
+                    lat: Companion.ridesData[id].coordinates[0],
+                    lng: Companion.ridesData[id].coordinates[1]
+                })
+            }
+
+            Companion.getWalkTime([Companion.ridesData[ride_id].coordinates], destinations).then(function(response) {
+
+                if (response.status === 200) {
+                    for (row of response.json.rows) {
+                        for (element_index in row.elements) {
+                            walkTimeMatrix[walkTimeMatrixModel[element_index]] = row.elements[element_index].duration.value
+                        }
+                    }
                 }
-            // Callback when it is done
-            }, function (err, ride) {
-                // Return error
+                
+                // Data for the database
+                Companion.Ride.create({
+                    // ID of the ride
+                    _id: ride_id,
+                    // Name of the ride
+                    name: ride.name,
+                    // Information of the ride
+                    infos: {
+                        park: ride.id.split('_')[1].substr(0, 2),
+                        fastPass: ride.fastPass,
+                        duration: Companion.ridesData[ride_id].duration,
+                    },
+                    walkTimeMatrix : walkTimeMatrix,
+                    loc: {
+                        coordinates: Companion.ridesData[ride_id].coordinates,
+                    }
+                // Callback when it is done
+                }, function (err, ride) {
+                    // Return error
+                    if (err) console.log(err);
+                    callback();
+                })
+            }).catch(function(err) {
                 if (err) console.log(err);
                 callback();
             })

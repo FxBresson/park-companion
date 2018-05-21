@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 const Themeparks = require("themeparks");
 const data = require("./data")
+const googleMapsClient = require('@google/maps').createClient({
+    key: "AIzaSyDXVHnglTdFoy6oNw_OTKnnZhGMOQ-RA7I",
+    Promise: Promise
+});
+
 
 let companion =  {
-
-    apiKey: "AIzaSyC3wkOpW2Gbl5wA010K16IDeVMEDb7m5TE",
 
     // Get the parks
     dlpPark: new Themeparks.Parks.DisneylandParisMagicKingdom(),
@@ -44,6 +47,20 @@ let companion =  {
             rides = [].concat.apply([], rides);
             callback(rides);
         })
+    },
+
+    getWalkTime: function(origins, destinations) {
+        if (destinations.length) {
+            return googleMapsClient.distanceMatrix({
+                origins: origins,
+                destinations: destinations,
+                mode: 'walking',
+            }).asPromise();
+        } else {
+            return new Promise(function(resolve) {
+                resolve(true);
+            })
+        }
     },
 
     // Close the connection to the database
