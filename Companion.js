@@ -19,7 +19,7 @@ let companion =  {
     ridesData: data,
 
     config: {
-        timeMargin: 5
+        timeMargin: 300
     },
 
     // Model Ride
