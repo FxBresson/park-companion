@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Themeparks = require("themeparks");
-const data = require("./data")
 const googleMapsClient = require('@google/maps').createClient({
     key: "AIzaSyDXVHnglTdFoy6oNw_OTKnnZhGMOQ-RA7I",
     Promise: Promise
@@ -22,6 +21,8 @@ let companion =  {
 
     // Model Ride
     Ride: require('./api/models/Ride'),
+    // Model Destination
+    Destination: require('./api/models/Destination'),
 
     // Connection to the database
     connect: function(callback) {
