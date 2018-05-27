@@ -16,8 +16,6 @@ let companion =  {
     //
     connection: mongoose.connection,
 
-    ridesData: data,
-
     config: {
         timeMargin: 300
     },

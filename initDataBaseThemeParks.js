@@ -1,7 +1,8 @@
 // include the Themeparks library
 const Companion = require('./Companion');
 const async = require('async');
-
+const ridesData = require('./data/rides.js');
+const destinationsData = require('./data/destinations.js');
 // Connection to the database
 Companion.connect(function() {
     console.log('Connected to DB')
@@ -25,12 +26,12 @@ Companion.connect(function() {
             for (id of walkTimeMatrixModel) {
                 walkTimeMatrix[id] = null
                 destinations.push({
-                    lat: Companion.ridesData[id].coordinates[0],
-                    lng: Companion.ridesData[id].coordinates[1]
+                    lat: ridesData[id].coordinates[0],
+                    lng: ridesData[id].coordinates[1]
                 })
             }
 
-            Companion.getWalkTime([Companion.ridesData[ride_id].coordinates], destinations).then(function(response) {
+            Companion.getWalkTime([ridesData[ride_id].coordinates], destinations).then(function(response) {
 
                 if (response.status === 200) {
                     for (row of response.json.rows) {
@@ -50,11 +51,11 @@ Companion.connect(function() {
                     infos: {
                         park: ride.id.split('_')[1].substr(0, 2),
                         fastPass: ride.fastPass,
-                        duration: Companion.ridesData[ride_id].duration,
+                        duration: ridesData[ride_id].duration,
                     },
                     walkTimeMatrix : walkTimeMatrix,
                     loc: {
-                        coordinates: Companion.ridesData[ride_id].coordinates,
+                        coordinates: ridesData[ride_id].coordinates,
                     }
                 // Callback when it is done
                 }, function (err, ride) {
