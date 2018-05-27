@@ -106,6 +106,7 @@ Companion.connect(function() {
 
     // Return
     app.get('/rides/:lat?/:lng?/:duration?', function (req, res) {
+
         if (!req.params.lat || !req.params.lng || !req.params.duration) {
             res.json({ "message": "You have forgot a parameter!" ,
                         "parameter1": "latitude" ,
@@ -124,65 +125,83 @@ Companion.connect(function() {
             } else {
                 // Step 1 : en fonction de :lat et :lng, on choppe l'attraction la plus proche de la position de l'utilisateur (je vais la nommer $nearest)
 
-                var nearest = Companion.Ride.find(
-                    { loc:
-                        { $near:
-                            { $geometry:
-                                { type: "Point",
-                                coordinates: [ req.params.lat, req.params.lng] }
+                Companion.Destination.find({
+                    "polygon": {
+                        $geoIntersects: {
+                            $geometry: {
+                                type: "Point",
+                                coordinates: [req.params.lng, req.params.lat]
                             }
                         }
+                    },
+                    "_id": {
+                        $in: ["P1", "P2"]
                     }
-                ).limit(1).then(function(nearest) {
-                    // On récupère l'index 0 du tableau nearest retourné
-                    nearest = nearest[0];
-
-                    // Results
-                    var nearestRides = [];
-
-                    // Step 2 : obtenir toutes les attractions ou : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
-                    // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test à la main
-
-                    Companion.Ride.find({ "realTime.active": true }, function(err, rides){
-                        if (err) console.log(err);
-
-                        // If there is no result
-                        if (!rides) {
-                            res.json({ "message": "No ride found for the time provided!" });
-                        } else {
-                            for (ride of rides) {
-                                // Step 2 : obtenir toutes les attractions où : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
-                                // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
-                                if ((Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration) <= req.params.duration*60) {
-
-                                    let maxWaltTime = req.params.duration*60 - (Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration);
-
-                                    // Step 3 : on pose :duration - (Companion.config.timeMargin + realTime.waitTime + infos.duration) = $maxWaltTime
-                                    // Il nous faut donc toutes les attractions où le temps de marche $nearest -> attraction est inférieur à $maxWaltTime
-                                    // Ce temps peut etre trouvé dans la propriété walkTimeMatrix de l'attraction.
-                                    // Le walkTimeMatrix contient tous les temps de marche (pour l'instant set a 10 normalement) de l'attraction vers les autres attractions dont l'ID est apres dans l'ordre alphabétique
-                                    // c'est a dire :
-                                    // si tu veux la distance P1DA06 -> P1NA16, il faut regarder dans le walkTimeMatrix de P1DA06 (car P1DA06 < P1NA16 dans l'ordre alphabétique)
-                                    // par contre si tu veux la distance P1DA06 -> P1AA02, il faut regarder dans le walkTimeMatrix de P1AA02
-                                    // Hésite pas a regarder dans la base de donnée pour comprendre la structure des objects walkTimeMatrix si c'est pas clair. J'ai aussi laissé le console.log quand tu init la database en executant initDataBaseThemeParks.js, ca sera peut etre plus facile pour se rendre compte
-
-
-                                    let from = (nearest.id < ride.id) ? nearest : ride;
-                                    let to = (nearest.id < ride.id) ? ride : nearest;
-
-
-                                    if (from.walkTimeMatrix[to.id] <= maxWaltTime) {
-                                        // Tableau des attractions à retouner
-                                        nearestRides.push(ride.name);
+                }).then(function(destination) {
+                    if (destination.length) {
+                        Companion.Ride.find(
+                            { loc:
+                                { $near:
+                                    { $geometry:
+                                        { type: "Point",
+                                        coordinates: [ req.params.lat, req.params.lng] }
                                     }
                                 }
                             }
+                        ).limit(1).then(function(nearest) {
+                            // On récupère l'index 0 du tableau nearest retourné
+                            nearest = nearest[0];
 
-                            res.json(nearestRides);
-                        }
+                            // Results
+                            var nearestRides = [];
+
+                            // Step 2 : obtenir toutes les attractions ou : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
+                            // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test à la main
+
+                            Companion.Ride.find({ "realTime.active": true }, function(err, rides){
+                                if (err) console.log(err);
+
+                                // If there is no result
+                                if (!rides) {
+                                    res.json({ "message": "No ride found for the time provided!" });
+                                } else {
+                                    for (ride of rides) {
+                                        // Step 2 : obtenir toutes les attractions où : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
+                                        // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
+                                        if ((Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration) <= req.params.duration*60) {
+
+                                            let maxWaltTime = req.params.duration*60 - (Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration);
+
+                                            // Step 3 : on pose :duration - (Companion.config.timeMargin + realTime.waitTime + infos.duration) = $maxWaltTime
+                                            // Il nous faut donc toutes les attractions où le temps de marche $nearest -> attraction est inférieur à $maxWaltTime
+                                            // Ce temps peut etre trouvé dans la propriété walkTimeMatrix de l'attraction.
+                                            // Le walkTimeMatrix contient tous les temps de marche (pour l'instant set a 10 normalement) de l'attraction vers les autres attractions dont l'ID est apres dans l'ordre alphabétique
+                                            // c'est a dire :
+                                            // si tu veux la distance P1DA06 -> P1NA16, il faut regarder dans le walkTimeMatrix de P1DA06 (car P1DA06 < P1NA16 dans l'ordre alphabétique)
+                                            // par contre si tu veux la distance P1DA06 -> P1AA02, il faut regarder dans le walkTimeMatrix de P1AA02
+                                            // Hésite pas a regarder dans la base de donnée pour comprendre la structure des objects walkTimeMatrix si c'est pas clair. J'ai aussi laissé le console.log quand tu init la database en executant initDataBaseThemeParks.js, ca sera peut etre plus facile pour se rendre compte
 
 
-                    });
+                                            let from = (nearest.id < ride.id) ? nearest : ride;
+                                            let to = (nearest.id < ride.id) ? ride : nearest;
+
+
+                                            if (from.walkTimeMatrix[to.id] <= maxWaltTime) {
+                                                // Tableau des attractions à retouner
+                                                nearestRides.push(ride.name);
+                                            }
+                                        }
+                                    }
+
+                                    res.json(nearestRides);
+                                }
+
+
+                            });
+                        })
+                    } else {
+                        res.json({ "message": "You're not in a Disneyland Paris Park !" });
+                    }
                 })
             }
         }
