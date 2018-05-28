@@ -10,12 +10,6 @@ const rateLimiter = new RateLimit({
     delayMs: 0 // disable delaying - full speed until the max limit is reached
 });
 
-app.use(rateLimiter)
-
-app.listen(port);
-
-console.log('Serveur API en écoute sur le port ' + port);
-
 function generateLinks(req, id) {
     return [
         {
@@ -37,24 +31,6 @@ function generateLinks(req, id) {
  *  ROUTER
  ********************************************************************/
 Companion.connect(function() {
-
-
-    // Return all routes
-    app.get('/', function (req, res) {
-        var routes = [];
-
-        app._router.stack.forEach(function(r) {
-            if (r.route && r.route.path) {
-                routes.push(r.route.path);
-            }
-        });
-
-        routes.push("/rides/?lat=:lat&lng=:lng&duration=:duration");
-
-        res.json({ "available_routes": routes});
-    });
-
-
 
     // Return ride by id
     app.get('/ride/:id?', function (req, res, next) {
@@ -227,7 +203,6 @@ Companion.connect(function() {
         }
     });
 
-
     // Pour toutes les routes non existantes
     app.get('*', function (req, res) {
         var routes = [];
@@ -244,4 +219,23 @@ Companion.connect(function() {
                     "available_routes": routes});
     });
 
+    // Return all routes
+    app.get('/', function (req, res) {
+        var routes = [];
+
+        app._router.stack.forEach(function(r) {
+            if (r.route && r.route.path) {
+                routes.push(r.route.path);
+            }
+        });
+
+        routes.push("/rides/?lat=:lat&lng=:lng&duration=:duration");
+
+        res.json({ "available_routes": routes});
+    });
+
+    
+    app.use(rateLimiter)
+    app.listen(port);
+    console.log('Serveur API en écoute sur le port ' + port);
 })
