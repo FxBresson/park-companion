@@ -1,8 +1,16 @@
 const Companion = require('./Companion');
-
+const RateLimit = require('express-rate-limit');
 const express = require('express'),
     app = express(),
     port = process.env.PORT || 3000;
+
+const rateLimiter = new RateLimit({
+    windowMs: 1000, // 1 minutes
+    max: 1, // limit each IP to 1 requests per windowMs
+    delayMs: 0 // disable delaying - full speed until the max limit is reached
+});
+
+app.use(rateLimiter)
 
 app.listen(port);
 
