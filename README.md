@@ -13,9 +13,12 @@ Clone the repo and do `npm install`
 ## Fill the data base
 Run `node initDataBaseThemParks.js` just once
 You can use the software Mongotron to read the data base
+Run `node getWaitTimes.js` periodically to fill the db with real wait time
 
 ## To use the API
+Run `mongod`
 Run `node server.js`
+
 All the routes that you can use:
 * '\/' -> GET all routes
 * '/ride/:id?' -> GET a ride by its id
