@@ -16,12 +16,28 @@ app.listen(port);
 
 console.log('Serveur API en écoute sur le port ' + port);
 
-
+function generateLinks(req, id) {
+    return [
+        {
+            rel: "self",
+            href: req.protocol + '://' + req.get('host') + '/ride/' + id
+        },
+        {
+            rel: "list",
+            href: req.protocol + '://' + req.get('host') + '/rides'
+        },
+        {
+            rel: "waitTime",
+            href: req.protocol + '://' + req.get('host') + '/wait/' + id
+        }
+    ]
+}
 
 /********************************************************************
  *  ROUTER
  ********************************************************************/
 Companion.connect(function() {
+
 
     // Return all routes
     app.get('/', function (req, res) {
@@ -45,7 +61,7 @@ Companion.connect(function() {
 
         // If there is not a parameter
         if (!req.params.id) {
-            res.json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
+            res.status(400).json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
         }
         // There is a parameter
         else {
@@ -54,10 +70,11 @@ Companion.connect(function() {
 
                 // If there is no result
                 if (!ride) {
-                    res.json({ "message": "The parameter provided is not usable!" });
+                    res.status(404).json({ "message": "The parameter provided is not usable!" });
                 }
                 // There is a result
                 else {
+                    ride.set('links', generateLinks(req, ride.id), { strict: false })
                     res.json(ride);
                 }
             });
@@ -71,7 +88,7 @@ Companion.connect(function() {
 
         // If there is not a parameter
         if (!req.params.id) {
-            res.json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
+            res.status(400).json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
         }
         // There is a parameter
         else {
@@ -80,7 +97,7 @@ Companion.connect(function() {
 
                 // If there is no result
                 if (!ride) {
-                    res.json({ "message": "The parameter provided is not usable!" });
+                    res.status(404).json({ "message": "The parameter provided is not usable!" });
                 }
                 // There is a result
                 else {
@@ -101,30 +118,33 @@ Companion.connect(function() {
 
                 // If there is no result
                 if (!rides) {
-                    res.json({ "message": "No ride found in this park!" });
+                    res.status(404).json({ "message": "No ride found in this park!" });
                 }
                 // There is a result
                 else {
+                    for (ride of rides) {
+                        ride.set('links', generateLinks(req, ride.id), { strict: false })
+                    }
                     res.json(rides);
                 }
             });
         }
         // S'il manque un des paramètres
         else if (!req.query.lat || !req.query.lng || !req.query.duration) {
-            res.json({ "message": "You have forgot a parameter!" ,
+            res.status(400).json({ "message": "You have forgot a parameter!" ,
                         "parameter1": "latitude" ,
                         "parameter2": "longitude" ,
                         "parameter3": "duration" });
         }
         else {
             if (isNaN(req.query.lat)) {
-                res.json({ "message": "The latitude is not a number!" });
+                res.status(400).json({ "message": "The latitude is not a number!" });
             } else if (isNaN(req.query.lng)) {
-                res.json({ "message": "The longitude is not a number!" });
+                res.status(400).json({ "message": "The longitude is not a number!" });
             } else if (req.query.lat > 90 || req.query.lat < -90) {
-                res.json({ "message": "The value of the latitude does not exist!" });
+                res.status(400).json({ "message": "The value of the latitude does not exist!" });
             } else if (req.query.lng > 180 || req.query.lng < -180) {
-                res.json({ "message": "The value of the longitude does not exist!" });
+                res.status(400).json({ "message": "The value of the longitude does not exist!" });
             } else {
                 // Step 1 : en fonction de :lat et :lng, on choppe l'attraction la plus proche de la position de l'utilisateur (je vais la nommer $nearest)
 
@@ -166,7 +186,7 @@ Companion.connect(function() {
 
                                 // If there is no result
                                 if (!rides) {
-                                    res.json({ "message": "No rides found for the time provided!" });
+                                    res.status(404).json({ "message": "No rides found for the time provided!" });
                                 } else {
                                     for (ride of rides) {
                                         // Step 2 : obtenir toutes les attractions où : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
@@ -200,7 +220,7 @@ Companion.connect(function() {
                             });
                         })
                     } else {
-                        res.json({ "message": "You're not in a Disneyland Paris Park !" });
+                        res.status(400).json({ "message": "You're not in a Disneyland Paris Park !" });
                     }
                 })
             }
@@ -220,7 +240,7 @@ Companion.connect(function() {
 
         routes.push("/rides/?lat=:lat&lng=:lng&duration=:duration");
 
-        res.json({ "message": "The route does not exist!" ,
+        res.status(404).json({ "message": "The route does not exist!" ,
                     "available_routes": routes});
     });
 
