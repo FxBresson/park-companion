@@ -5,21 +5,20 @@ const googleMapsClient = require('@google/maps').createClient({
     Promise: Promise
 });
 
-
 let companion =  {
 
-    // Get the parks
+    // Get the parks from Themeparks module
     dlpPark: new Themeparks.Parks.DisneylandParisMagicKingdom(),
     wdsPark: new Themeparks.Parks.DisneylandParisWaltDisneyStudios(),
 
-    //
+    // Connection object
     connection: mongoose.connection,
 
     config: {
         timeMargin: 300
     },
 
-    // Model Ride
+    // Ride
     Ride: require('./api/models/Ride'),
     // Model Destination
     Destination: require('./api/models/Destination'),
@@ -33,29 +32,32 @@ let companion =  {
         this.connection.on('error', console.error.bind(console, 'connection error:'));
     },
 
+    // Get Rides wait times form Themeparks module
     getRides: function(callback) {
-        // Get wait times from the parks
+        // Get wait times from the parks as Promises
         let dlpRides = this.dlpPark.GetWaitTimes();
         let wdsRides = this.wdsPark.GetWaitTimes();
 
-        // One promise for each park
-        // @param array[array of rides,array of rides]
+        // @param array[array of rides, array of rides]
         Promise.all([dlpRides, wdsRides]).then(function(rides) {
-            // All rides from the two parks
-            // Concat two arrays in one array
+            // Concat the two arrays in one
             rides = [].concat.apply([], rides);
             callback(rides);
         })
     },
 
+    // Get walk time between origins and destinations form the Google Map Distance Matrix API
     getWalkTime: function(origins, destinations) {
         if (destinations.length) {
+            // Return a Promise
             return googleMapsClient.distanceMatrix({
                 origins: origins,
                 destinations: destinations,
                 mode: 'walking',
             }).asPromise();
         } else {
+            // If there are no destinations (case for the last ride of the list)
+            // Return a always true Promise, to still execute the "then" function
             return new Promise(function(resolve) {
                 resolve(true);
             })
