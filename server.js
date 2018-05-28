@@ -27,28 +27,32 @@ function generateLinks(req, id) {
     ]
 }
 
+
+
 /********************************************************************
  *  ROUTER
  ********************************************************************/
 Companion.connect(function() {
 
-    // Return ride by id
+
+    /**
+     * GET a ride by :id
+     */
     app.get('/ride/:id?', function (req, res, next) {
 
-        // If there is not a parameter
+        // If the parameter is missing
         if (!req.params.id) {
             res.status(400).json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
         }
-        // There is a parameter
         else {
             Companion.Ride.findById(req.params.id, function(err,ride){
                 if (err) { return next(err); }
 
-                // If there is no result
+                // No result found
                 if (!ride) {
-                    res.status(404).json({ "message": "The parameter provided is not usable!" });
+                    res.status(400).json({ "message": "The parameter provided is not usable!" });
                 }
-                // There is a result
+                // Return the result
                 else {
                     ride.set('links', generateLinks(req, ride.id), { strict: false })
                     res.json(ride);
@@ -59,23 +63,24 @@ Companion.connect(function() {
     });
 
 
-    // Return wait time by id of the ride
+    /**
+     * GET the wait time of a ride by :id
+     */
     app.get('/wait/:id?', function (req, res, next) {
 
-        // If there is not a parameter
+        // If the parameter is missing
         if (!req.params.id) {
             res.status(400).json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
         }
-        // There is a parameter
         else {
             Companion.Ride.findById(req.params.id, function(err,ride){
                 if (err) { return next(err); }
 
-                // If there is no result
+                // No result found
                 if (!ride) {
                     res.status(404).json({ "message": "The parameter provided is not usable!" });
                 }
-                // There is a result
+                // Return the result
                 else {
                     res.json(ride.realTime.waitTime);
                 }
@@ -85,18 +90,23 @@ Companion.connect(function() {
     });
 
 
-    // Return all rides or
+
+    /**
+     * GET all rides
+     * GET rides by :latitude :longitude :duration
+     */
     app.get('/rides/', function (req, res, next) {
-        // S'il n'y a aucun paramètre, on retourne toutes les rides
+        // If all parameters are missing
+        // GET all rides
         if (!req.query.lat && !req.query.lng && !req.query.duration) {
             Companion.Ride.find({}, function(err, rides){
                 if (err) { return next(err); }
 
-                // If there is no result
+                // No result found
                 if (!rides) {
                     res.status(404).json({ "message": "No ride found in this park!" });
                 }
-                // There is a result
+                // Return the result
                 else {
                     for (ride of rides) {
                         ride.set('links', generateLinks(req, ride.id), { strict: false })
@@ -105,14 +115,18 @@ Companion.connect(function() {
                 }
             });
         }
-        // S'il manque un des paramètres
+
+        // If one of the parameters is missing
         else if (!req.query.lat || !req.query.lng || !req.query.duration) {
             res.status(400).json({ "message": "You have forgot a parameter!" ,
                         "parameter1": "latitude" ,
                         "parameter2": "longitude" ,
                         "parameter3": "duration" });
         }
+
+        // GET rides by :latitude :longitude :duration
         else {
+            // If :lat is not a number
             if (isNaN(req.query.lat)) {
                 res.status(400).json({ "message": "The latitude is not a number!" });
             } else if (isNaN(req.query.lng)) {
@@ -122,28 +136,28 @@ Companion.connect(function() {
             } else if (req.query.lng > 180 || req.query.lng < -180) {
                 res.status(400).json({ "message": "The value of the longitude does not exist!" });
             } else {
-                // Step 1 : en fonction de :lat et :lng, on choppe l'attraction la plus proche de la position de l'utilisateur (je vais la nommer $nearest)
 
-                Companion.Ride.find({ 
-                    loc: {
-                        $near: {
-                            $geometry: {
-                                type: "Point",
-                                coordinates: [ req.params.lat, req.params.lng] 
+                // On récupère l'attraction la plus proche de la position de l'utilisateur
+                var nearest = Companion.Ride.find(
+                    { loc:
+                        { $near:
+                            { $geometry:
+                                { type: "Point",
+                                coordinates: [ req.query.lat, req.query.lng] }
                             }
                         }
-                    },
-                    "_id": {
-                        $in: ["P1", "P2"]
                     }
-                }).then(function(destination) {
+                    // "_id": {
+                    //     $in: ["P1", "P2"]
+                    // }
+                ).then(function(destination) {
                     if (destination.length) {
                         Companion.Ride.find(
                             { loc:
                                 { $near:
                                     { $geometry:
                                         { type: "Point",
-                                        coordinates: [ req.params.lat, req.params.lng] }
+                                        coordinates: [ req.query.lat, req.query.lng] }
                                     }
                                 }
                             }
@@ -154,43 +168,45 @@ Companion.connect(function() {
                             // Results
                             var nearestRides = [];
 
-                            // Step 2 : obtenir toutes les attractions ou : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
-                            // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test à la main
-
+                            // On récupère les rides actives
                             Companion.Ride.find({ "realTime.active": true }, function(err, rides){
                                 if (err) console.log(err);
 
-                                // If there is no result
+                                // No result found
                                 if (!rides) {
-                                    res.status(404).json({ "message": "No rides found for the time provided!" });
+                                    res.json({ "message": "No ride found for the time provided!" });
                                 } else {
                                     for (ride of rides) {
-                                        // Step 2 : obtenir toutes les attractions où : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
-                                        // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
-                                        if ((Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration) <= req.params.duration*60) {
 
-                                            let maxWaltTime = req.params.duration*60 - (Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration);
+                                        // On calcule le temps d'attente de l'attraction + sa durée + plus une marge de temps de 5min
+                                        // Le temps waitTime est converti en secondes
+                                        var timeForRide = Companion.config.timeMargin + ride.realTime.waitTime * 60 + ride.infos.duration;
 
-                                            // Step 3 : on pose :duration - (Companion.config.timeMargin + realTime.waitTime + infos.duration) = $maxWaltTime
-                                            // Il nous faut donc toutes les attractions où le temps de marche $nearest -> attraction est inférieur à $maxWaltTime
-                                            // Ce temps peut etre trouvé dans la propriété walkTimeMatrix de l'attraction.
-                                            // Le walkTimeMatrix contient tous les temps de marche (pour l'instant set a 10 normalement) de l'attraction vers les autres attractions dont l'ID est apres dans l'ordre alphabétique
-                                            // c'est a dire :
-                                            // si tu veux la distance P1DA06 -> P1NA16, il faut regarder dans le walkTimeMatrix de P1DA06 (car P1DA06 < P1NA16 dans l'ordre alphabétique)
-                                            // par contre si tu veux la distance P1DA06 -> P1AA02, il faut regarder dans le walkTimeMatrix de P1AA02
-                                            // Hésite pas a regarder dans la base de donnée pour comprendre la structure des objects walkTimeMatrix si c'est pas clair. J'ai aussi laissé le console.log quand tu init la database en executant initDataBaseThemeParks.js, ca sera peut etre plus facile pour se rendre compte
+                                        // Le paramètre :duration de l'utilisateur est converti en secondes
+                                        var userDurationSecond = req.query.duration * 60;
 
+                                        // Si le temps pour faire l'attraction est inférieur au temps entré par l'utilisateur
+                                        if (timeToRide <= userDurationSecond) {
 
+                                            // On calcule le temps de marche maximum nécessaire pour aller jusqu'à l'attraction
+                                            let maxWaltTime = userDurationSecond - timeForRide;
+
+                                            // On récupère les id des attractions de départ et d'arrivée, par ordre alphabétique
+                                            // nearest : attraction la plus proche (voir au-dessus)
+                                            // ride : attraction courente (boucle)
                                             let from = (nearest.id < ride.id) ? nearest : ride;
                                             let to = (nearest.id < ride.id) ? ride : nearest;
 
-
+                                            // On récupère le temps de marche entre l'attraction from à l'attraction to
+                                            // Si ce temps est inférieur ou égal au temps de marche nécessaire pour aller jusqu'à l'attraction
+                                            // On l'ajoute dans le tableau de résultats
                                             if (from.walkTimeMatrix[to.id] <= maxWaltTime) {
-                                                // Tableau des attractions à retouner
+                                                // Tableau des attractions à retourner
                                                 nearestRides.push(ride.name);
                                             }
                                         }
                                     }
+                                    // Return the result
                                     res.json(nearestRides);
                                 }
                             });
@@ -203,7 +219,9 @@ Companion.connect(function() {
         }
     });
 
-    // Pour toutes les routes non existantes
+    /**
+     * GET every routes non created and render a message
+     */
     app.get('*', function (req, res) {
         var routes = [];
 
@@ -219,7 +237,11 @@ Companion.connect(function() {
                     "available_routes": routes});
     });
 
-    // Return all routes
+
+
+    /**
+     * GET all the routes created
+     */
     app.get('/', function (req, res) {
         var routes = [];
 
@@ -231,11 +253,11 @@ Companion.connect(function() {
 
         routes.push("/rides/?lat=:lat&lng=:lng&duration=:duration");
 
-        res.json({ "available_routes": routes});
+        res.status(404).json({ "available_routes": routes});
     });
 
-    
+
     app.use(rateLimiter)
     app.listen(port);
     console.log('Serveur API en écoute sur le port ' + port);
-})
+});
