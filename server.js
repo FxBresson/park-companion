@@ -1,4 +1,5 @@
 const Companion = require('./Companion');
+const moment = require('moment');
 const RateLimit = require('express-rate-limit');
 const express = require('express'),
     app = express(),
@@ -25,6 +26,10 @@ function generateLinks(req, id) {
             href: req.protocol + '://' + req.get('host') + '/wait/' + id
         }
     ]
+}
+
+function getCacheAge() {
+    return moment().minutes(Math.ceil(moment().minutes()/15)*15).startOf('minute').diff(moment(), 'seconds')
 }
 
 
@@ -55,6 +60,7 @@ Companion.connect(function() {
                 } else {
                     ride.set('links', generateLinks(req, ride.id), { strict: false });
                     // Return JSON result
+                    res.setHeader('Cache-Control', 'public, max-age='+getCacheAge())
                     res.json(ride);
                 }
             });
@@ -82,7 +88,8 @@ Companion.connect(function() {
                     // Return JSON error message
                     res.status(404).json({ "message": "The parameter provided is not usable!" });
                 } else {
-                    // Return JSON result
+                // Return JSON result
+                    res.setHeader('Cache-Control', 'public, max-age='+getCacheAge())
                     res.json(ride.realTime.waitTime);
                 }
             });
@@ -112,6 +119,7 @@ Companion.connect(function() {
                         ride.set('links', generateLinks(req, ride.id), { strict: false })
                     }
                     // Return JSON result
+                    res.setHeader('Cache-Control', 'public, max-age='+getCacheAge())
                     res.json(rides);
                 }
             });
@@ -221,6 +229,7 @@ Companion.connect(function() {
                                         }
                                     }
                                     // Return JSON result
+                                    res.setHeader('Cache-Control', 'public, max-age='+getCacheAge())
                                     res.json(nearestRides);
                                 }
                             });
@@ -257,8 +266,6 @@ Companion.connect(function() {
         res.status(404).json({ "message": "The route does not exist!" ,
                     "available_routes": routes});
     });
-
-
 
     /**
      * GET all the routes created
