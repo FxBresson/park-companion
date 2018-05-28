@@ -14,7 +14,7 @@ var DestinationSchema = new Schema({
     },
     polygon: {
         type: {type: String, default: 'Polygon'},
-        coordinates: { type: [[[Number]]],   default: [[[0,0]]] }
+        coordinates: { type: [Number],   default: [[[0,0]]] }
     }
 });
 
