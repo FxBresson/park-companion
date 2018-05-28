@@ -50,17 +50,17 @@ Companion.connect(function() {
 
                 // No result found
                 if (!ride) {
+                    // Return JSON error message
                     res.status(400).json({ "message": "The parameter provided is not usable!" });
-                }
-                // Return the result
-                else {
-                    ride.set('links', generateLinks(req, ride.id), { strict: false })
+                } else {
+                    ride.set('links', generateLinks(req, ride.id), { strict: false });
+                    // Return JSON result
                     res.json(ride);
                 }
             });
         }
-
     });
+
 
 
     /**
@@ -70,6 +70,7 @@ Companion.connect(function() {
 
         // If the parameter is missing
         if (!req.params.id) {
+            // Return JSON error message
             res.status(400).json({ "message": "You have forgot the parameter!" , "parameter": "ID of the ride" });
         }
         else {
@@ -78,10 +79,10 @@ Companion.connect(function() {
 
                 // No result found
                 if (!ride) {
+                    // Return JSON error message
                     res.status(404).json({ "message": "The parameter provided is not usable!" });
-                }
-                // Return the result
-                else {
+                } else {
+                    // Return JSON result
                     res.json(ride.realTime.waitTime);
                 }
             });
@@ -104,13 +105,13 @@ Companion.connect(function() {
 
                 // No result found
                 if (!rides) {
+                    // Return JSON error message
                     res.status(404).json({ "message": "No ride found in this park!" });
-                }
-                // Return the result
-                else {
+                } else {
                     for (ride of rides) {
                         ride.set('links', generateLinks(req, ride.id), { strict: false })
                     }
+                    // Return JSON result
                     res.json(rides);
                 }
             });
@@ -118,6 +119,7 @@ Companion.connect(function() {
 
         // If one of the parameters is missing
         else if (!req.query.lat || !req.query.lng || !req.query.duration) {
+            // Return JSON error message
             res.status(400).json({ "message": "You have forgot a parameter!" ,
                         "parameter1": "latitude" ,
                         "parameter2": "longitude" ,
@@ -128,12 +130,19 @@ Companion.connect(function() {
         else {
             // If :lat is not a number
             if (isNaN(req.query.lat)) {
+                // Return JSON error message
                 res.status(400).json({ "message": "The latitude is not a number!" });
+            // If :lng is not a number
             } else if (isNaN(req.query.lng)) {
+                // Return JSON error message
                 res.status(400).json({ "message": "The longitude is not a number!" });
+            // If :lat is between -90 and 90
             } else if (req.query.lat > 90 || req.query.lat < -90) {
+                // Return JSON error message
                 res.status(400).json({ "message": "The value of the latitude does not exist!" });
+            // If :lng is between -180 and 180
             } else if (req.query.lng > 180 || req.query.lng < -180) {
+                // Return JSON error message
                 res.status(400).json({ "message": "The value of the longitude does not exist!" });
             } else {
 
@@ -143,6 +152,7 @@ Companion.connect(function() {
                         { $near:
                             { $geometry:
                                 { type: "Point",
+                                // Coordonnées de la localisation de l'utilisateur
                                 coordinates: [ req.query.lat, req.query.lng] }
                             }
                         }
@@ -157,10 +167,12 @@ Companion.connect(function() {
                                 { $near:
                                     { $geometry:
                                         { type: "Point",
+                                        // Coordonnées de la localisation de l'utilisateur
                                         coordinates: [ req.query.lat, req.query.lng] }
                                     }
                                 }
                             }
+                        // limit(1) : we need the nearest ride
                         ).limit(1).then(function(nearest) {
                             // On récupère l'index 0 du tableau nearest retourné
                             nearest = nearest[0];
@@ -174,8 +186,10 @@ Companion.connect(function() {
 
                                 // No result found
                                 if (!rides) {
+                                    // Return JSON error message
                                     res.json({ "message": "No ride found for the time provided!" });
                                 } else {
+                                    // For every rides found
                                     for (ride of rides) {
 
                                         // On calcule le temps d'attente de l'attraction + sa durée + plus une marge de temps de 5min
@@ -206,12 +220,13 @@ Companion.connect(function() {
                                             }
                                         }
                                     }
-                                    // Return the result
+                                    // Return JSON result
                                     res.json(nearestRides);
                                 }
                             });
                         })
                     } else {
+                        // Return JSON error message
                         res.status(400).json({ "message": "You're not in a Disneyland Paris Park !" });
                     }
                 })
@@ -219,20 +234,26 @@ Companion.connect(function() {
         }
     });
 
+
+
     /**
      * GET every routes non created and render a message
      */
     app.get('*', function (req, res) {
+        // Results
         var routes = [];
 
+        // GET every routes
         app._router.stack.forEach(function(r) {
             if (r.route && r.route.path) {
                 routes.push(r.route.path);
             }
         });
 
+        // Add the route with query string
         routes.push("/rides/?lat=:lat&lng=:lng&duration=:duration");
 
+        // Return JSON error message
         res.status(404).json({ "message": "The route does not exist!" ,
                     "available_routes": routes});
     });
@@ -243,16 +264,20 @@ Companion.connect(function() {
      * GET all the routes created
      */
     app.get('/', function (req, res) {
+        // Results
         var routes = [];
 
+        // GET every routes
         app._router.stack.forEach(function(r) {
             if (r.route && r.route.path) {
                 routes.push(r.route.path);
             }
         });
 
+        // Add the route with query string
         routes.push("/rides/?lat=:lat&lng=:lng&duration=:duration");
 
+        // Return JSON error message
         res.status(404).json({ "available_routes": routes});
     });
 
