@@ -120,12 +120,12 @@ Companion.connect(function() {
             } else {
                 // Step 1 : en fonction de :lat et :lng, on choppe l'attraction la plus proche de la position de l'utilisateur (je vais la nommer $nearest)
 
-                var nearest = Companion.Ride.find(
-                    { loc:
-                        { $near:
-                            { $geometry:
-                                { type: "Point",
-                                coordinates: [ req.params.lat, req.params.lng] }
+                Companion.Ride.find({ 
+                    loc: {
+                        $near: {
+                            $geometry: {
+                                type: "Point",
+                                coordinates: [ req.params.lat, req.params.lng] 
                             }
                         }
                     },
@@ -156,16 +156,16 @@ Companion.connect(function() {
                             Companion.Ride.find({ "realTime.active": true }, function(err, rides){
                                 if (err) console.log(err);
 
-                        // If there is no result
-                        if (!rides) {
-                            res.json({ "message": "No ride found for the time provided!" });
-                        } else {
-                            for (ride of rides) {
-                                // Step 2 : obtenir toutes les attractions où : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
-                                // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
-                                if ((Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration) <= req.params.duration*60) {
+                                // If there is no result
+                                if (!rides) {
+                                    res.json({ "message": "No rides found for the time provided!" });
+                                } else {
+                                    for (ride of rides) {
+                                        // Step 2 : obtenir toutes les attractions où : Companion.config.timeMargin + realTime.waitTime + infos.duration <= :duration
+                                        // Si possible faudrait trouver un moyen de le faire direct dans la requete, mais sinon faut recuperer toutes les attractions et faire le test a la main
+                                        if ((Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration) <= req.params.duration*60) {
 
-                                    let maxWaltTime = req.params.duration*60 - (Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration);
+                                            let maxWaltTime = req.params.duration*60 - (Companion.config.timeMargin + ride.realTime.waitTime*60 + ride.infos.duration);
 
                                             // Step 3 : on pose :duration - (Companion.config.timeMargin + realTime.waitTime + infos.duration) = $maxWaltTime
                                             // Il nous faut donc toutes les attractions où le temps de marche $nearest -> attraction est inférieur à $maxWaltTime
@@ -187,13 +187,8 @@ Companion.connect(function() {
                                             }
                                         }
                                     }
-
                                     res.json(nearestRides);
                                 }
-
-                            res.json(nearestRides);
-                        }
-
                             });
                         })
                     } else {
