@@ -60,6 +60,8 @@ Companion.connect(function() {
                 } else {
                     ride.set('links', generateLinks(req, ride.id), { strict: false });
                     // Return JSON result
+                    res.setHeader('Content-type','application/json');
+                    res.setHeader('Access-Control-Allow-Origin','GET');
                     res.setHeader('Cache-Control', 'public, max-age='+getCacheAge())
                     res.json(ride);
                 }
@@ -207,7 +209,7 @@ Companion.connect(function() {
                                         var userDurationSecond = req.query.duration * 60;
 
                                         // Si le temps pour faire l'attraction est inférieur au temps entré par l'utilisateur
-                                        if (timeToRide <= userDurationSecond) {
+                                        if (timeForRide <= userDurationSecond) {
 
                                             // On calcule le temps de marche maximum nécessaire pour aller jusqu'à l'attraction
                                             let maxWaltTime = userDurationSecond - timeForRide;
