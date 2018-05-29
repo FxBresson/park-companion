@@ -153,35 +153,34 @@ Companion.connect(function() {
                 // Return JSON error message
                 res.status(400).json({ "message": "The value of the longitude does not exist!" });
             } else {
-
-                // On récupère l'attraction la plus proche de la position de l'utilisateur
-                var nearest = Companion.Ride.find(
-                    { loc:
-                        { $near:
-                            { $geometry:
-                                { type: "Point",
+                Companion.Destination.find({ 
+                    polygon: {
+                        $geoIntersects: { 
+                            $geometry: { 
+                                type: "Point",
                                 // Coordonnées de la localisation de l'utilisateur
-                                coordinates: [ req.query.lat, req.query.lng] }
+                                coordinates: [ req.query.lat, req.query.lng] 
                             }
                         }
+                    },
+                    "_id": {
+                        $in: ["P1", "P2"]
                     }
-                    // "_id": {
-                    //     $in: ["P1", "P2"]
-                    // }
-                ).then(function(destination) {
+                }).then(function(destination) {
                     if (destination.length) {
-                        Companion.Ride.find(
-                            { loc:
-                                { $near:
-                                    { $geometry:
-                                        { type: "Point",
+                        // On récupère l'attraction la plus proche de la position de l'utilisateur
+                        Companion.Ride.find({ 
+                            loc: { 
+                                $near: { 
+                                    $geometry: { 
+                                        type: "Point",
                                         // Coordonnées de la localisation de l'utilisateur
-                                        coordinates: [ req.query.lat, req.query.lng] }
+                                        coordinates: [ req.query.lat, req.query.lng] 
                                     }
                                 }
                             }
                         // limit(1) : we need the nearest ride
-                        ).limit(1).then(function(nearest) {
+                        }).limit(1).then(function(nearest) {
                             // On récupère l'index 0 du tableau nearest retourné
                             nearest = nearest[0];
 
@@ -195,7 +194,7 @@ Companion.connect(function() {
                                 // No result found
                                 if (!rides) {
                                     // Return JSON error message
-                                    res.json({ "message": "No ride found for the time provided!" });
+                                    res.status(404).json({ "message": "No ride found for the time provided!" });
                                 } else {
                                     // For every rides found
                                     for (ride of rides) {
