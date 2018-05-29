@@ -39,6 +39,11 @@ function getCacheAge() {
  ********************************************************************/
 Companion.connect(function() {
 
+    app.use(function(req, res, next) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        next();
+    });
 
     /**
      * GET a ride by :id
@@ -60,8 +65,6 @@ Companion.connect(function() {
                 } else {
                     ride.set('links', generateLinks(req, ride.id), { strict: false });
                     // Return JSON result
-                    res.setHeader('Content-type','application/json');
-                    res.setHeader('Access-Control-Allow-Origin','GET');
                     res.setHeader('Cache-Control', 'public, max-age='+getCacheAge())
                     res.json(ride);
                 }
