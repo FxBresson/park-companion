@@ -207,7 +207,7 @@ Companion.connect(function() {
                                         var userDurationSecond = req.query.duration * 60;
 
                                         // Si le temps pour faire l'attraction est inférieur au temps entré par l'utilisateur
-                                        if (timeToRide <= userDurationSecond) {
+                                        if (timeForRide <= userDurationSecond) {
 
                                             // On calcule le temps de marche maximum nécessaire pour aller jusqu'à l'attraction
                                             let maxWaltTime = userDurationSecond - timeForRide;
@@ -223,7 +223,13 @@ Companion.connect(function() {
                                             // On l'ajoute dans le tableau de résultats
                                             if (from.walkTimeMatrix[to.id] <= maxWaltTime) {
                                                 // Tableau des attractions à retourner
-                                                nearestRides.push(ride.name);
+                                                nearestRides.push(
+                                                    { 
+                                                        'id': ride.id,
+                                                        'name': ride.name,
+                                                        'links': generateLinks(req, ride.id)
+                                                    }
+                                                );
                                             }
                                         }
                                     }
