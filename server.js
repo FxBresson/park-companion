@@ -19,7 +19,7 @@ function generateLinks(req, id) {
         },
         {
             rel: "list",
-            href: req.protocol + '://' + req.get('host') + '/rides'
+            href: req.protocol + '://' + req.get('host') + '/rides/'
         },
         {
             rel: "waitTime",
@@ -129,9 +129,9 @@ Companion.connect(function() {
         else if (!req.query.lat || !req.query.lng || !req.query.duration) {
             // Return JSON error message
             res.status(400).json({ "message": "You have forgot a parameter!" ,
-                        "parameter1": "latitude" ,
-                        "parameter2": "longitude" ,
-                        "parameter3": "duration" });
+                        "?lat=": "latitude" ,
+                        "&lng=": "longitude" ,
+                        "&duration=": "duration" });
         }
 
         // GET rides by :latitude :longitude :duration
@@ -153,13 +153,13 @@ Companion.connect(function() {
                 // Return JSON error message
                 res.status(400).json({ "message": "The value of the longitude does not exist!" });
             } else {
-                Companion.Destination.find({ 
+                Companion.Destination.find({
                     polygon: {
-                        $geoIntersects: { 
-                            $geometry: { 
+                        $geoIntersects: {
+                            $geometry: {
                                 type: "Point",
                                 // Coordonnées de la localisation de l'utilisateur
-                                coordinates: [ req.query.lat, req.query.lng] 
+                                coordinates: [ req.query.lng, req.query.lat ]
                             }
                         }
                     },
@@ -169,13 +169,13 @@ Companion.connect(function() {
                 }).then(function(destination) {
                     if (destination.length) {
                         // On récupère l'attraction la plus proche de la position de l'utilisateur
-                        Companion.Ride.find({ 
-                            loc: { 
-                                $near: { 
-                                    $geometry: { 
+                        Companion.Ride.find({
+                            loc: {
+                                $near: {
+                                    $geometry: {
                                         type: "Point",
                                         // Coordonnées de la localisation de l'utilisateur
-                                        coordinates: [ req.query.lat, req.query.lng] 
+                                        coordinates: [ req.query.lat, req.query.lng ]
                                     }
                                 }
                             }
@@ -184,7 +184,7 @@ Companion.connect(function() {
                             // On récupère l'index 0 du tableau nearest retourné
                             nearest = nearest[0];
 
-                            // Results
+                            // Array of results
                             var nearestRides = [];
 
                             // On récupère les rides actives
@@ -207,7 +207,7 @@ Companion.connect(function() {
                                         var userDurationSecond = req.query.duration * 60;
 
                                         // Si le temps pour faire l'attraction est inférieur au temps entré par l'utilisateur
-                                        if (timeForRide <= userDurationSecond) {
+                                        if (timeToRide <= userDurationSecond) {
 
                                             // On calcule le temps de marche maximum nécessaire pour aller jusqu'à l'attraction
                                             let maxWaltTime = userDurationSecond - timeForRide;
@@ -223,13 +223,7 @@ Companion.connect(function() {
                                             // On l'ajoute dans le tableau de résultats
                                             if (from.walkTimeMatrix[to.id] <= maxWaltTime) {
                                                 // Tableau des attractions à retourner
-                                                nearestRides.push(
-                                                    { 
-                                                        'id': ride.id,
-                                                        'name': ride.name,
-                                                        'links': generateLinks(req, ride.id)
-                                                    }
-                                                );
+                                                nearestRides.push(ride.name);
                                             }
                                         }
                                     }
@@ -241,7 +235,7 @@ Companion.connect(function() {
                         })
                     } else {
                         // Return JSON error message
-                        res.status(400).json({ "message": "You're not in a Disneyland Paris Park !" });
+                        res.status(404).json({ "message": "You're not in a Disneyland Paris park !" });
                     }
                 })
             }
@@ -271,6 +265,8 @@ Companion.connect(function() {
         res.status(404).json({ "message": "The route does not exist!" ,
                     "available_routes": routes});
     });
+
+
 
     /**
      * GET all the routes created
