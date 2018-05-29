@@ -8,7 +8,7 @@ Toothless & Marinesl
 [Link](http://api.fxbresson.fr:3000/)
 
 ## Installation
-Clone the repo and do `npm install`
+Clone the repo and run `npm install`
 
 ## Fill the data base
 Run `node initDataBaseThemParks.js` just once
